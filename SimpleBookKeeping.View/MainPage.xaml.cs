@@ -100,7 +100,7 @@ namespace SimpleBookKeeping.View
             //adding series will update and animate the chart automatically
             SeriesCollection.Add(new ColumnSeries
             {
-                Title = "2016",
+                Title = "2018",
                 Values = new ChartValues<double> { 11, 56, 42 }
             });
 
