@@ -1,0 +1,29 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using SimpleBookKeeping.Model;
+namespace SimpleBookKeeping.UWP
+{
+    class TabcontrolMaker
+    {
+        private Pivot pivotControl = new Pivot();
+
+        public Pivot getPivotControl(List<string> categories, BookKeeperContext bookKeeperContext, int type)
+        {
+            DatagridFactory datagridFactory = new DatagridFactory();
+
+            foreach (var category in categories)
+            {
+                pivotControl.Items.Add(new PivotItem
+                {
+                    Header = category,
+                    Content = datagridFactory.DatagridFactory_Make(category, type, bookKeeperContext),
+                });
+            }
+            return pivotControl;
+        }
+
+    }
+}
