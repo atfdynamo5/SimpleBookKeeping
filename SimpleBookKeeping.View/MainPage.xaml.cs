@@ -24,6 +24,8 @@ using LiveCharts.Uwp;
 using System.Reflection;
 using Windows.UI;
 using System.Text;
+using Windows.UI.ViewManagement;
+using System.ComponentModel;
 
 
 
@@ -63,27 +65,50 @@ namespace SimpleBookKeeping.View
         public DataGrid currentExpenseDatagrid { get; set; }
         public DataGrid currentIncomeDatagrid { get; set; }
         public SeriesCollection SeriesCollection { get; set; }
-        public string[] Labels { get; set; }
+        public List<string> Labels = new List<string>();
         public Func<double, string> Formatter { get; set; }
         public Func<ChartPoint, string> PointLabel { get; set; }
-        public IChartValues Values1 { get; set; } = new ChartValues<int>(new int[] { 3 });
-        public IChartValues Values2 { get; set; } = new ChartValues<int>(new int[] { 3 });
-        public IChartValues Values3 { get; set; } = new ChartValues<int>(new int[] { 3 });
-        public IChartValues Values4 { get; set; } = new ChartValues<int>(new int[] { 3 });
+   
         public ExpenseCategories ExpenseCategories { get; set; }
         public IncomeCategories IncomeCategories { get; set; }
         public List<string> incomeCategoryList = new List<string>();
         public List<string> expenseCategoryList = new List<string>();
-
-        public List<string> testList = new List<string>() { "hello", "how" };
+        public decimal TotalIncome;
+        public decimal TotalExpense;
+        public IChartValues Values1 { get; set; } = new ChartValues<decimal>();
+        public IChartValues Values2 { get; set; } = new ChartValues<decimal>();
+       
+   
         public MainPage()
         {
-
+            var titleBar = ApplicationView.GetForCurrentView().TitleBar;
+            
+            // Set active window colors
+            titleBar.ForegroundColor = Windows.UI.Colors.White;
+            titleBar.BackgroundColor = Windows.UI.Color.FromArgb(255, 70, 70, 70);
+            titleBar.ButtonForegroundColor = Windows.UI.Colors.White;
+            titleBar.ButtonBackgroundColor = Windows.UI.Color.FromArgb(255, 70, 70, 70);
+            
             this.InitializeComponent();
+
             this.ExpenseCategories = new ExpenseCategories();
             this.IncomeCategories = new IncomeCategories();
             HideAllGrids();
             DashboardGrid.Visibility = Visibility.Visible;
+            ChartValues<double> cv = new ChartValues<double>();
+            using (var context = new BookKeepingContext())
+            {
+                context.IncomeDBSet.Load();
+                incomeCategoryList = context.IncomeDBSet.Select(income => income.IncomeCategory).Distinct().Cast<string>().ToList();
+                Values1.Clear();
+                Values2.Clear();
+                TotalIncome = context.IncomeDBSet.Sum(t => t.IncomeAmount);
+                Values1.Add(TotalIncome);
+                context.ExpenseDBSet.Load();
+                TotalExpense = context.ExpenseDBSet.Sum(t => t.AmountPaid);
+                Values2.Add(TotalExpense);
+                
+            }
             PointLabel = chartPoint =>
                 string.Format("{0} ({1:P})", chartPoint.Y, chartPoint.Participation);
 
@@ -107,7 +132,7 @@ namespace SimpleBookKeeping.View
             //also adding values updates and animates the chart automatically
             SeriesCollection[1].Values.Add(48d);
 
-            Labels = new[] { "Gas", "Electric", "Heat", "Phone" };
+            Labels = incomeCategoryList;
             Formatter = value => value.ToString("N");
 
 
@@ -117,7 +142,20 @@ namespace SimpleBookKeeping.View
 
         private void DashBoardButton_Click(object sender, RoutedEventArgs e)
         {
-            HideAllGrids();
+
+            using (var context = new BookKeepingContext())
+            {
+                context.IncomeDBSet.Load();
+                incomeCategoryList = context.IncomeDBSet.Select(income => income.IncomeCategory).Distinct().Cast<string>().ToList();
+                Values1.Clear();
+                Values2.Clear();
+                TotalIncome = context.IncomeDBSet.Sum(t => t.IncomeAmount);
+                Values1.Add(TotalIncome);
+                context.ExpenseDBSet.Load();
+                TotalExpense = context.ExpenseDBSet.Sum(t => t.AmountPaid);
+                Values2.Add(TotalExpense);
+            }
+                HideAllGrids();
             DashboardGrid.Visibility = Visibility.Visible;
         }
 
@@ -134,7 +172,7 @@ namespace SimpleBookKeeping.View
                     db.ExpenseDBSet.LoadAsync();
 
                 }
-                ProgressRing.IsActive = false;
+                ExpenseProgressRing.IsActive = false;
             });
 
 
@@ -148,7 +186,7 @@ namespace SimpleBookKeeping.View
             //ExpenseGrid_Pivot.Children.Clear();
             //expensePivot.Items.Clear();
             //  pivot.Items.Add(new DataGrid());
-            ProgressRing.IsActive = true;
+            ExpenseProgressRing.IsActive = true;
             ExpenseGrid.Visibility = Visibility.Visible;
             loadingText.Visibility = Visibility.Visible;
             IEnumerable<string> newList = new List<string>();
@@ -163,7 +201,7 @@ namespace SimpleBookKeeping.View
                     //dataGrid.ItemsSource = db.ExpenseDBSet.ToList();
                     //dataGrid.PointerPressed += grid_click;
                     //dataGrid.PointerPressed += grid_click;
-                    ExpenseActivityList.ItemsSource = db.ExpenseDBSet.ToList();
+                    ExpenseActivityList.ItemsSource = db.ExpenseDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                     expensePivot = pivotInflator.CreatePivotItems(this.ExpenseCategories.NextExpenseCategory, db, 1, expensePivot, Ep_MouseUp, Expense_Datagrid_Sorting);
                     ExpenseGrid_Pivot.Children.Add(expensePivot); //1 is of expense type; 0 is of income type
                     pivotItem = expensePivot.Items[expensePivot.SelectedIndex] as PivotItem;
@@ -183,10 +221,12 @@ namespace SimpleBookKeeping.View
             //   // expense_datagrid = (DataGrid)FindName("testgrid");
             //    //expense_datagrid.PointerReleased += new PointerEventHandler(Ep_MouseUp);
             //}
+            UpdateTotalExpense();
             expensePivot.Tapped += ExpensePivot_Tapped;
             MenuExpenseButton.IsEnabled = true;
-            ProgressRing.IsActive = false;
+            ExpenseProgressRing.IsActive = false;
             loadingText.Visibility = Visibility.Collapsed;
+          
         }
 
         private async void grid_click(object sender, RoutedEventArgs e)
@@ -237,18 +277,18 @@ namespace SimpleBookKeeping.View
 
                     {
                         await db.IncomeDBSet.LoadAsync();
-                        IEnumerable<string> incomeCategoryList = new List<string>();
-                        incomeCategoryList = db.IncomeDBSet.Select(income => income.IncomeCategory).Distinct().Cast<string>();
+                        //IEnumerable<string> incomeCategoryList = new List<string>();
+                        incomeCategoryList = db.IncomeDBSet.Select(income => income.IncomeCategory).Distinct().Cast<string>().ToList();
                         this.IncomeCategories.NextIncomeCategory = incomeCategoryList.ToList();
                         //expenseCategoryList = expenseCategories.NextExpenseCategory;
                         //dataGrid.ItemsSource = db.ExpenseDBSet.ToList();
                         //dataGrid.PointerPressed += grid_click;
                         //dataGrid.PointerPressed += grid_click;
-                        IncomeActivityList.ItemsSource = db.IncomeDBSet.OrderByDescending(d => d.DatePaid).ToList();
+                        IncomeActivityList.ItemsSource = db.IncomeDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                         incomePivot = pivotInflator.CreatePivotItems(this.IncomeCategories.NextIncomeCategory, db, 0, incomePivot, In_MouseUp, Income_Datagrid_Sorting);
                         IncomeGrid_Pivot.Children.Add(incomePivot);
+                        UpdateTotalIncome();
                         pivotItem = incomePivot.Items[incomePivot.SelectedIndex] as PivotItem;
-                        incomeTotalTextBlock.Text = db.IncomeDBSet.Where(t => t.IncomeCategory == pivotItem.Header.ToString()).Sum(s => s.IncomeAmount).ToString("C2");
                         currentIncomeDatagrid = pivotItem.Content as DataGrid; //get first datagrid and set it to currentExpenseDatagrid so that it can be selected by default
                         currentIncomeDatagrid.SelectedIndex = 0;
 
@@ -275,9 +315,12 @@ namespace SimpleBookKeeping.View
                 using (var db = new BookKeepingContext())
 
                 {
+                    await db.IncomeDBSet.LoadAsync();
+
                     PivotItem pivotItem = new PivotItem();
                     pivotItem = incomePivot.Items[incomePivot.SelectedIndex] as PivotItem;
-                    incomeTotalTextBlock.Text = db.IncomeDBSet.Where(t => t.IncomeCategory == pivotItem.Header.ToString()).Sum(s => s.IncomeAmount).ToString("C2");
+                    TotalIncome = db.IncomeDBSet.Where(t => t.IncomeCategory == pivotItem.Header.ToString()).Sum(s => s.IncomeAmount);
+                    incomeTotalTextBlock.Text = TotalIncome.ToString("C2");
                 }
             }
             catch (Exception)
@@ -286,6 +329,27 @@ namespace SimpleBookKeeping.View
             }
         }
 
+        private async void UpdateTotalExpense()
+        {
+            try
+            {
+
+                using (var db = new BookKeepingContext())
+
+                {
+                    await db.ExpenseDBSet.LoadAsync();
+
+                    PivotItem pivotItem = new PivotItem();
+                    pivotItem = expensePivot.Items[expensePivot.SelectedIndex] as PivotItem;
+                    TotalExpense = db.ExpenseDBSet.Where(t => t.ExpenseCategory == pivotItem.Header.ToString()).Sum(s => s.AmountPaid);
+                    expenseTotalTextBlock.Text = TotalExpense.ToString("C2"); //Two steps are required so that we can use TotalExpense for adding new entries as a decimal
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
         private void HideAllGrids()
         {
             DashboardGrid.Visibility = Visibility.Collapsed;
@@ -366,20 +430,21 @@ namespace SimpleBookKeeping.View
                     context.ExpenseDBSet.Load();
                     try
                     {
-                        ProgressRing.IsActive = true;
+                        ExpenseProgressRing.IsActive = true;
                         ExpenseEntry expEntry = currentExpenseDatagrid.SelectedItem as ExpenseEntry;
                         expense = context.ExpenseDBSet.Single(b => b.ExpenseId == expEntry.ExpenseId);
                         expense.AmountPaid = decimal.Parse(EditExpenseAmountPaidTextBox.Text);
                         expense.CheckNumber = int.Parse(EditExpenseCheckNumberTextBox.Text);
-                        expense.DatePaid = DateTime.Now;
+                        expense.DatePaid = EditExpenseDatePaidDatePicker.Date.DateTime;
                         expense.ExpenseCategory = EditExpenseCategoryTextBox.Text;
-                        expense.Month = DateTime.Now.Month;
+                        expense.Month = EditExpenseDatePaidDatePicker.Date.DateTime.Month;
                         expense.TimeStamp = DateTime.Now;
                         expense.EntryNotes = EditExpenseEntryNotesTextBox.Text;
-                        expense.ExpenseTotal = 200;
+                        await context.SaveChangesAsync();
+                        expense.ExpenseTotal = context.ExpenseDBSet.Where(t => t.ExpenseCategory == EditExpenseCategoryTextBox.Text).Sum(s => s.AmountPaid);
                         await context.SaveChangesAsync();
                         currentExpenseDatagrid.ItemsSource = context.ExpenseDBSet.Where(ee => ee.ExpenseCategory == EditExpenseCategoryTextBox.Text);
-                        ExpenseActivityList.ItemsSource = context.ExpenseDBSet.ToList();
+                        ExpenseActivityList.ItemsSource = context.ExpenseDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                     }
                     catch (Exception exc)
                     {
@@ -408,7 +473,9 @@ namespace SimpleBookKeeping.View
                 };
                 ContentDialogResult result = await editRecordUpdatedDialog.ShowAsync();
             }
-            ProgressRing.IsActive = false;
+
+            ExpenseProgressRing.IsActive = false;
+            UpdateTotalExpense();
             Expense_EditExpense_InputArea.Visibility = Visibility.Collapsed;
             Expense_OptionBar_EditButton.IsEnabled = false;
             Expense_OptionBar_AddButton.IsEnabled = true;
@@ -450,20 +517,23 @@ namespace SimpleBookKeeping.View
                     context.IncomeDBSet.Load();
                     try
                     {
-                        ProgressRing.IsActive = true;
+                        ExpenseProgressRing.IsActive = true;
                         IncomeEntry expEntry = currentIncomeDatagrid.SelectedItem as IncomeEntry;
                         income = context.IncomeDBSet.Single(b => b.IncomeId == expEntry.IncomeId);
                         income.IncomeAmount = decimal.Parse(EditIncomeAmountPaidTextBox.Text);
-                        income.CheckNumber = int.Parse(EditIncomeCheckNumberTextBox.Text);
-                        income.DatePaid = DateTime.Now;
+                       //income.CheckNumber = int.Parse(EditIncomeCheckNumberTextBox.Text);
+                        income.DatePaid = EditIncomeDatePaidDatePicker.Date.DateTime;
                         income.IncomeCategory = EditIncomeCategoryTextBox.Text;
-                        income.Month = DateTime.Now.Month;
+                        income.Month = EditIncomeDatePaidDatePicker.Date.DateTime.Month;
                         income.TimeStamp = DateTime.Now;
                         income.EntryNotes = EditIncomeEntryNotesTextBox.Text;
-                        income.IncomeTotal = 200;
+
                         await context.SaveChangesAsync();
+                        income.IncomeTotal = context.IncomeDBSet.Where(t => t.IncomeCategory == EditIncomeCategoryTextBox.Text).Sum(s => s.IncomeAmount);
+                        await context.SaveChangesAsync();
+                        context.IncomeDBSet.Load();
                         currentIncomeDatagrid.ItemsSource = context.IncomeDBSet.Where(ee => ee.IncomeCategory == EditIncomeCategoryTextBox.Text);
-                        IncomeActivityList.ItemsSource = context.IncomeDBSet.ToList();
+                        IncomeActivityList.ItemsSource = context.IncomeDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                     }
                     catch (Exception exc)
                     {
@@ -492,7 +562,8 @@ namespace SimpleBookKeeping.View
                 };
                 ContentDialogResult result = await editRecordUpdatedDialog.ShowAsync();
             }
-            ProgressRing.IsActive = false;
+            ExpenseProgressRing.IsActive = false;
+            UpdateTotalIncome();
             Income_EditIncome_InputArea.Visibility = Visibility.Collapsed;
             Income_OptionBar_EditButton.IsEnabled = false;
             Income_OptionBar_AddButton.IsEnabled = true;
@@ -513,7 +584,7 @@ namespace SimpleBookKeeping.View
 
         private bool isEditIncomeEntryEmpty()
         {
-            if (String.IsNullOrWhiteSpace(EditIncomeEntryNotesTextBox.Text) || String.IsNullOrWhiteSpace(EditIncomeAmountPaidTextBox.Text) || String.IsNullOrWhiteSpace(EditIncomeCheckNumberTextBox.Text))
+            if (String.IsNullOrWhiteSpace(EditIncomeAmountPaidTextBox.Text) || (EditIncomeDatePaidDatePicker.Date == null))
             {
                 return true;
             }
@@ -551,12 +622,12 @@ namespace SimpleBookKeeping.View
                 {
                     AmountPaid = decimal.Parse(AddExpenseAmountPaidTextBox.Text),
                     CheckNumber = int.Parse(AddExpenseCheckNumberTextBox.Text),
-                    DatePaid = DateTime.Now,
+                    DatePaid = AddExpenseDatePaidDatePicker.Date.DateTime,
                     ExpenseCategory = AddExpenseCategoryTextBox.Text,
-                    Month = DateTime.Now.Month,
+                    Month = AddExpenseDatePaidDatePicker.Date.DateTime.Month,
                     TimeStamp = DateTime.Now,
                     EntryNotes = AddExpenseEntryNotesTextBox.Text,
-                    ExpenseTotal = 200
+                    ExpenseTotal = TotalExpense + decimal.Parse(AddExpenseAmountPaidTextBox.Text)
                 };
 
                 using (var context = new BookKeepingContext())
@@ -581,12 +652,47 @@ namespace SimpleBookKeeping.View
                 };
                 ContentDialogResult result = await editRecordUpdatedDialog.ShowAsync();
             }
-
+            UpdateTotalExpense();
             RefreshExpenseDatagrid(AddExpenseCategoryTextBox.Text, currentExpenseDatagrid);
             Clear_AddExpense_ControlElements();
             Expense_AddExpense_InputArea.Visibility = Visibility.Collapsed;
             Expense_OptionBar_EditButton.IsEnabled = true;
             expensePivot.IsEnabled = true;
+        }
+
+        private async void Expense_ShowYear_Button_Click(object sender, RoutedEventArgs e)
+        {
+            PivotItem pivotItem = new PivotItem();
+            pivotItem = expensePivot.Items[expensePivot.SelectedIndex] as PivotItem;
+            ExpenseProgressRing.IsActive = true;
+            try
+            {
+
+
+                using (var db = new BookKeepingContext())
+                {
+                    await db.ExpenseDBSet.LoadAsync();
+                    //expenseCategoryList = db.ExpenseDBSet.Select(expense => expense.ExpenseCategory).Distinct().Cast<string>();
+                   
+                    currentExpenseDatagrid.ItemsSource = db.ExpenseDBSet.Where(i => i.ExpenseCategory.Contains(pivotItem.Header.ToString())).Where(d => (d.DatePaid.Date.Year == Expense_From_DatePicker.Date.Year)).OrderBy(c => c.DatePaid).ToList();
+
+                    currentExpenseDatagrid.SelectedIndex = 0;
+                }
+            }
+            catch (Exception)
+            {
+
+                ContentDialog Expense_FromToInvalid_Dialog = new ContentDialog
+                {
+                    Title = "Invalid Date Entry",
+                    Content = "Please ensure the date range is valid and try again.",
+                    CloseButtonText = "Ok"
+                };
+
+                ContentDialogResult result = await Expense_FromToInvalid_Dialog.ShowAsync();
+            }
+
+            ExpenseProgressRing.IsActive = false;
         }
 
         private void Income_EditRecord_BackButton_Click(object sender, RoutedEventArgs e)
@@ -600,8 +706,8 @@ namespace SimpleBookKeeping.View
         private void Clear_EditIncome_ControlElements()
         {
             EditIncomeCategoryTextBox.Text = "";
-            EditIncomeCheckNumberTextBox.Text = "";
-            EditIncomeDatePaidDatePicker.Date = null;
+            //EditIncomeCheckNumberTextBox.Text = "";
+            EditIncomeDatePaidDatePicker.Date = DateTime.Now;
             EditIncomeEntryNotesTextBox.Text = "";
             EditIncomeAmountPaidTextBox.Text = "";
         }
@@ -650,7 +756,7 @@ namespace SimpleBookKeeping.View
             DataGridColumn ExpenseGridIdColumn = (DataGridColumn)currentExpenseDatagrid.Columns.First(p => p.Header.ToString() == "ID");
             ExpenseEntry expenseEntry = currentExpenseDatagrid.SelectedItem as ExpenseEntry;
             expensePivot.IsEnabled = false;
-            AddExpenseCategoryTextBox.Text = expenseEntry.ExpenseCategory.ToString();
+            AddExpenseCategoryTextBox.Text = pivotItem.Header.ToString();
 
             Expense_EditExpense_InputArea.Visibility = Visibility.Collapsed;
             Expense_AddExpense_InputArea.Visibility = Visibility.Visible;
@@ -667,7 +773,7 @@ namespace SimpleBookKeeping.View
             DataGridColumn IncomeGridIdColumn = (DataGridColumn)currentIncomeDatagrid.Columns.First(p => p.Header.ToString() == "ID");
             IncomeEntry incomeEntry = currentIncomeDatagrid.SelectedItem as IncomeEntry;
             incomePivot.IsEnabled = false;
-            AddIncomeCategoryTextBox.Text = incomeEntry.IncomeCategory.ToString();
+            AddIncomeCategoryTextBox.Text = pivotItem.Header.ToString();
 
             Income_EditIncome_InputArea.Visibility = Visibility.Collapsed;
             Income_AddIncome_InputArea.Visibility = Visibility.Visible;
@@ -680,7 +786,7 @@ namespace SimpleBookKeeping.View
             IncomeEntry incomeEntry = currentIncomeDatagrid.SelectedItem as IncomeEntry;
             incomePivot.IsEnabled = false;
             EditIncomeCategoryTextBox.Text = incomeEntry.IncomeCategory.ToString();
-            EditIncomeCheckNumberTextBox.Text = incomeEntry.CheckNumber.ToString();
+            //EditIncomeCheckNumberTextBox.Text = incomeEntry.CheckNumber.ToString();
 
             EditIncomeDatePaidDatePicker.Date = incomeEntry.DatePaid;
             EditIncomeEntryNotesTextBox.Text = incomeEntry.EntryNotes.ToString();
@@ -722,13 +828,13 @@ namespace SimpleBookKeeping.View
                 IncomeEntry incomeEntry = new IncomeEntry
                 {
                     IncomeAmount = decimal.Parse(AddIncomeAmountPaidTextBox.Text),
-                    CheckNumber = int.Parse(AddIncomeCheckNumberTextBox.Text),
-                    DatePaid = DateTime.Now,
+                    //CheckNumber = int.Parse(AddIncomeCheckNumberTextBox.Text),
+                    DatePaid = AddIncomeDatePaidDatePicker.Date.DateTime,
                     IncomeCategory = AddIncomeCategoryTextBox.Text,
-                    Month = DateTime.Now.Month,
+                    Month = AddIncomeDatePaidDatePicker.Date.DateTime.Month,
                     TimeStamp = DateTime.Now,
                     EntryNotes = AddIncomeEntryNotesTextBox.Text,
-                    IncomeTotal = 200
+                    IncomeTotal = TotalIncome + decimal.Parse(AddIncomeAmountPaidTextBox.Text)
                 };
 
                 using (var context = new BookKeepingContext())
@@ -755,7 +861,7 @@ namespace SimpleBookKeeping.View
                 };
                 ContentDialogResult result = await editRecordUpdatedDialog.ShowAsync();
             }
-
+            UpdateTotalIncome();
             RefreshIncomeDatagrid(AddIncomeCategoryTextBox.Text, currentIncomeDatagrid);
             Clear_AddIncome_ControlElements();
             Income_AddIncome_InputArea.Visibility = Visibility.Collapsed;
@@ -766,8 +872,8 @@ namespace SimpleBookKeeping.View
         private void Clear_AddIncome_ControlElements()
         {
             AddIncomeCategoryTextBox.Text = "";
-            AddIncomeCheckNumberTextBox.Text = "";
-            AddIncomeDatePaidDatePicker.Date = null;
+           //AddIncomeCheckNumberTextBox.Text = "";
+            AddIncomeDatePaidDatePicker.Date = DateTime.Now;
             AddIncomeEntryNotesTextBox.Text = "";
             AddIncomeAmountPaidTextBox.Text = "";
         }
@@ -783,7 +889,7 @@ namespace SimpleBookKeeping.View
 
         private bool isAddIncomeEntryEmpty()
         {
-            if (String.IsNullOrWhiteSpace(AddIncomeEntryNotesTextBox.Text) || String.IsNullOrWhiteSpace(AddIncomeAmountPaidTextBox.Text) || String.IsNullOrWhiteSpace(AddIncomeCheckNumberTextBox.Text))
+            if (String.IsNullOrWhiteSpace(AddIncomeEntryNotesTextBox.Text) || String.IsNullOrWhiteSpace(AddIncomeAmountPaidTextBox.Text))
             {
                 return true;
             }
@@ -1137,7 +1243,7 @@ namespace SimpleBookKeeping.View
         {
             EditExpenseCategoryTextBox.Text = "";
             EditExpenseCheckNumberTextBox.Text = "";
-            EditExpenseDatePaidDatePicker.Date = null;
+            EditExpenseDatePaidDatePicker.Date = DateTime.Now;
             EditExpenseEntryNotesTextBox.Text = "";
             EditExpenseAmountPaidTextBox.Text = "";
         }
@@ -1146,7 +1252,7 @@ namespace SimpleBookKeeping.View
         {
             AddExpenseCategoryTextBox.Text = "";
             AddExpenseCheckNumberTextBox.Text = "";
-            AddExpenseDatePaidDatePicker.Date = null;
+            AddExpenseDatePaidDatePicker.Date = DateTime.Now;
             AddExpenseEntryNotesTextBox.Text = "";
             AddExpenseAmountPaidTextBox.Text = "";
         }
@@ -1163,7 +1269,7 @@ namespace SimpleBookKeeping.View
                 context.ExpenseDBSet.Load();
                 try
                 {
-                    ExpenseActivityList.ItemsSource = context.ExpenseDBSet.ToList();
+                    ExpenseActivityList.ItemsSource = context.ExpenseDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                     ep.ItemsSource = context.ExpenseDBSet
                         .Where(i => i.ExpenseCategory.Contains(category)).OrderBy(c => c.DatePaid).ToList();
 
@@ -1198,7 +1304,7 @@ namespace SimpleBookKeeping.View
                         context.ExpenseDBSet.Load();
                         try
                         {
-                            IncomeActivityList.ItemsSource = context.ExpenseDBSet.ToList();
+                            ExpenseActivityList.ItemsSource = context.ExpenseDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                             currentExpenseDatagrid.ItemsSource = context.ExpenseDBSet
                                 .Where(i => i.ExpenseCategory.Contains(pivotItem.Header.ToString())).OrderByDescending(c => c.DatePaid).ToList();
 
@@ -1219,7 +1325,7 @@ namespace SimpleBookKeeping.View
                         context.ExpenseDBSet.Load();
                         try
                         {
-                            ExpenseActivityList.ItemsSource = context.ExpenseDBSet.ToList();
+                            ExpenseActivityList.ItemsSource = context.ExpenseDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                             currentExpenseDatagrid.ItemsSource = context.ExpenseDBSet
                                 .Where(i => i.ExpenseCategory.Contains(pivotItem.Header.ToString())).OrderByDescending(c => c.ExpenseId).ToList();
 
@@ -1240,7 +1346,7 @@ namespace SimpleBookKeeping.View
                         context.ExpenseDBSet.Load();
                         try
                         {
-                            ExpenseActivityList.ItemsSource = context.ExpenseDBSet.ToList();
+                            ExpenseActivityList.ItemsSource = context.ExpenseDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                             currentExpenseDatagrid.ItemsSource = context.ExpenseDBSet
                                 .Where(i => i.ExpenseCategory.Contains(pivotItem.Header.ToString())).OrderByDescending(c => c.Month).ToList();
 
@@ -1261,7 +1367,7 @@ namespace SimpleBookKeeping.View
                         context.ExpenseDBSet.Load();
                         try
                         {
-                            ExpenseActivityList.ItemsSource = context.ExpenseDBSet.ToList();
+                            ExpenseActivityList.ItemsSource = context.ExpenseDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                             currentExpenseDatagrid.ItemsSource = context.ExpenseDBSet
                                 .Where(i => i.ExpenseCategory.Contains(pivotItem.Header.ToString())).OrderByDescending(c => c.ExpenseTotal).ToList();
 
@@ -1282,7 +1388,7 @@ namespace SimpleBookKeeping.View
                         context.ExpenseDBSet.Load();
                         try
                         {
-                            ExpenseActivityList.ItemsSource = context.ExpenseDBSet.ToList();
+                            ExpenseActivityList.ItemsSource = context.ExpenseDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                             currentExpenseDatagrid.ItemsSource = context.ExpenseDBSet
                                 .Where(i => i.ExpenseCategory.Contains(pivotItem.Header.ToString())).OrderByDescending(c => c.EntryNotes).ToList();
 
@@ -1303,7 +1409,7 @@ namespace SimpleBookKeeping.View
                         context.ExpenseDBSet.Load();
                         try
                         {
-                            ExpenseActivityList.ItemsSource = context.ExpenseDBSet.ToList();
+                            ExpenseActivityList.ItemsSource = context.ExpenseDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                             currentExpenseDatagrid.ItemsSource = context.ExpenseDBSet
                                 .Where(i => i.ExpenseCategory.Contains(pivotItem.Header.ToString())).OrderByDescending(c => c.CheckNumber).ToList();
 
@@ -1324,7 +1430,7 @@ namespace SimpleBookKeeping.View
                         context.ExpenseDBSet.Load();
                         try
                         {
-                            ExpenseActivityList.ItemsSource = context.ExpenseDBSet.ToList();
+                            ExpenseActivityList.ItemsSource = context.ExpenseDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                             currentExpenseDatagrid.ItemsSource = context.ExpenseDBSet
                                 .Where(i => i.ExpenseCategory.Contains(pivotItem.Header.ToString())).OrderByDescending(c => c.AmountPaid).ToList();
 
@@ -1354,7 +1460,7 @@ namespace SimpleBookKeeping.View
                         context.IncomeDBSet.Load();
                         try
                         {
-                            IncomeActivityList.ItemsSource = context.IncomeDBSet.ToList();
+                            IncomeActivityList.ItemsSource = context.IncomeDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                             currentIncomeDatagrid.ItemsSource = context.IncomeDBSet
                                 .Where(i => i.IncomeCategory.Contains(pivotItem.Header.ToString())).OrderByDescending(c => c.DatePaid).ToList();
 
@@ -1375,7 +1481,7 @@ namespace SimpleBookKeeping.View
                         context.IncomeDBSet.Load();
                         try
                         {
-                            IncomeActivityList.ItemsSource = context.IncomeDBSet.ToList();
+                            IncomeActivityList.ItemsSource = context.IncomeDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                             currentIncomeDatagrid.ItemsSource = context.IncomeDBSet
                                 .Where(i => i.IncomeCategory.Contains(pivotItem.Header.ToString())).OrderByDescending(c => c.IncomeId).ToList();
 
@@ -1396,7 +1502,7 @@ namespace SimpleBookKeeping.View
                         context.IncomeDBSet.Load();
                         try
                         {
-                            IncomeActivityList.ItemsSource = context.IncomeDBSet.ToList();
+                            IncomeActivityList.ItemsSource = context.IncomeDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                             currentIncomeDatagrid.ItemsSource = context.IncomeDBSet
                                 .Where(i => i.IncomeCategory.Contains(pivotItem.Header.ToString())).OrderByDescending(c => c.Month).ToList();
 
@@ -1417,7 +1523,7 @@ namespace SimpleBookKeeping.View
                         context.IncomeDBSet.Load();
                         try
                         {
-                            IncomeActivityList.ItemsSource = context.IncomeDBSet.ToList();
+                            IncomeActivityList.ItemsSource = context.IncomeDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                             currentIncomeDatagrid.ItemsSource = context.IncomeDBSet
                                 .Where(i => i.IncomeCategory.Contains(pivotItem.Header.ToString())).OrderByDescending(c => c.IncomeTotal).ToList();
 
@@ -1438,7 +1544,7 @@ namespace SimpleBookKeeping.View
                         context.IncomeDBSet.Load();
                         try
                         {
-                            IncomeActivityList.ItemsSource = context.IncomeDBSet.ToList();
+                            IncomeActivityList.ItemsSource = context.IncomeDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                             currentIncomeDatagrid.ItemsSource = context.IncomeDBSet
                                 .Where(i => i.IncomeCategory.Contains(pivotItem.Header.ToString())).OrderByDescending(c => c.EntryNotes).ToList();
 
@@ -1459,7 +1565,7 @@ namespace SimpleBookKeeping.View
                         context.IncomeDBSet.Load();
                         try
                         {
-                            IncomeActivityList.ItemsSource = context.IncomeDBSet.ToList();
+                            IncomeActivityList.ItemsSource = context.IncomeDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                             currentIncomeDatagrid.ItemsSource = context.IncomeDBSet
                                 .Where(i => i.IncomeCategory.Contains(pivotItem.Header.ToString())).OrderByDescending(c => c.CheckNumber).ToList();
 
@@ -1480,7 +1586,7 @@ namespace SimpleBookKeeping.View
                         context.IncomeDBSet.Load();
                         try
                         {
-                            IncomeActivityList.ItemsSource = context.IncomeDBSet.ToList();
+                            IncomeActivityList.ItemsSource = context.IncomeDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                             currentIncomeDatagrid.ItemsSource = context.IncomeDBSet
                                 .Where(i => i.IncomeCategory.Contains(pivotItem.Header.ToString())).OrderByDescending(c => c.IncomeAmount).ToList();
 
@@ -1503,7 +1609,7 @@ namespace SimpleBookKeeping.View
                 context.IncomeDBSet.Load();
                 try
                 {
-                    IncomeActivityList.ItemsSource = context.IncomeDBSet.ToList();
+                    IncomeActivityList.ItemsSource = context.IncomeDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                     ep.ItemsSource = context.IncomeDBSet
                         .Where(i => i.IncomeCategory.Contains(category)).OrderByDescending(c => c.DatePaid).ToList();
 
@@ -1588,7 +1694,40 @@ namespace SimpleBookKeeping.View
 
         }
 
+        private async void Income_ShowYear_Button_Click(object sender, RoutedEventArgs e)
+        {
+            PivotItem pivotItem = new PivotItem();
+            pivotItem = incomePivot.Items[incomePivot.SelectedIndex] as PivotItem;
+            IncomeProgressRing.IsActive = true;
+            try
+            {
 
+
+                using (var db = new BookKeepingContext())
+                {
+                    await db.IncomeDBSet.LoadAsync();
+                    //incomeCategoryList = db.IncomeDBSet.Select(income => income.IncomeCategory).Distinct().Cast<string>();
+
+                    currentIncomeDatagrid.ItemsSource = db.IncomeDBSet.Where(i => i.IncomeCategory.Contains(pivotItem.Header.ToString())).Where(d => (d.DatePaid.Date.Year == Income_From_DatePicker.Date.Year)).OrderBy(c => c.DatePaid).ToList();
+
+                    currentIncomeDatagrid.SelectedIndex = 0;
+                }
+            }
+            catch (Exception)
+            {
+
+                ContentDialog Income_FromToInvalid_Dialog = new ContentDialog
+                {
+                    Title = "Invalid Date Entry",
+                    Content = "Please ensure the date range is valid and try again.",
+                    CloseButtonText = "Ok"
+                };
+
+                ContentDialogResult result = await Income_FromToInvalid_Dialog.ShowAsync();
+            }
+
+            IncomeProgressRing.IsActive = false;
+        }
     }
 
 

@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SimpleBookKeeping.View")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("95 Express Book Keeping")]
+[assembly: AssemblyDescription("Simple Book Keeping Application for Income and Expense Entries")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("SimpleBookKeeping.View")]
-[assembly: AssemblyCopyright("Copyright ©  2018")]
+[assembly: AssemblyCompany("My Network Professional.com")]
+[assembly: AssemblyProduct("Simple BookKeeping App")]
+[assembly: AssemblyCopyright("Copyright ©  2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

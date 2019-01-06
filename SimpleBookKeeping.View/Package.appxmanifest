@@ -15,7 +15,7 @@
   </Resources>
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="SimpleBookKeeping.View.App">
-      <uap:VisualElements DisplayName="SimpleBookKeeping.View" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\logo.png" Description="SimpleBookKeeping.View" BackgroundColor="transparent">
+      <uap:VisualElements DisplayName="95 Express Book Keeping" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\logo.png" Description="Easy to use Book Keeping Application for Income and Expense Entries with export to Excel option!" BackgroundColor="transparent">
         <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png">
         </uap:DefaultTile>
         <uap:SplashScreen Image="Assets\SplashScreen.png" />

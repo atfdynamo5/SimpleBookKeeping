@@ -25,6 +25,14 @@ namespace SimpleBookKeeping.View
                     Content = datagridFactory.DatagridFactory_Make(category, type, bookKeepingContext, pointerEventHandler, DataGrid_ColumnSort_Handler),
                 });
             }
+            for (var i = 0; i < 100; i++)
+            {
+                pivot.Items.Add(new PivotItem
+                {
+                    Header = "+ Add",
+                    Content = new TextBlock { Text = "Hello" },
+                });
+            }
             pivot.Name = "MainPivot";
 
             return pivot;

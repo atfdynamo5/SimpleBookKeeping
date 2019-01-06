@@ -33,28 +33,22 @@ namespace SimpleBookKeeping.View
                     dataGrid.AutoGenerateColumns = false;
                     dataGrid.CanUserSortColumns = true;
                     dataGrid.Sorting += DataGrid_ColumnSort_Handler;
-                   // DataGridTextColumn gridTextColumn = new DataGridTextColumn();
+                    
+                    // DataGridTextColumn gridTextColumn = new DataGridTextColumn();
 
                     // binding.ElementName = "EntryNotes";
                     Binding bindingMonth = new Binding() { Path = new PropertyPath("Month") };
                     Binding bindingIncomeId = new Binding() { Path = new PropertyPath("IncomeId") };
-                    Binding bindingDatePaid = new Binding() { Path = new PropertyPath("DatePaid") };
+                  //Binding bindingDatePaid = new Binding() { Path = new PropertyPath("DatePaid") };
                     Binding bindingIncomeAmount = new Binding() { Path = new PropertyPath("IncomeAmount") };
-                    Binding bindingCheckNumber = new Binding() { Path = new PropertyPath("CheckNumber") };
+                  //Binding bindingCheckNumber = new Binding() { Path = new PropertyPath("CheckNumber") };
                     Binding bindingEntryNotes = new Binding() { Path = new PropertyPath("EntryNotes") };
                     Binding bindingIncomeTotal = new Binding() { Path = new PropertyPath("IncomeTotal") };
                     
                     // dataGrid.DataContext = bookKeepingContext;
                     dataGrid.ItemsSource = bookKeepingContext.IncomeDBSet
-                        .Where(i => i.IncomeCategory.Contains(category)).ToList();
-                    dataGrid.Columns.Add(new DataGridTextColumn()
-                    {
-                        Header = "Month",
-                        Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
-                        Binding = bindingMonth,                       
-
-                    });
-
+                        .Where(i => i.IncomeCategory.Contains(category)).Where(d => d.DatePaid.Date.Year == DateTime.Now.Year).ToList();
+                   
                     dataGrid.Columns.Add(new DataGridTextColumn()
                     {
                         Header = "ID",
@@ -63,26 +57,33 @@ namespace SimpleBookKeeping.View
 
                     });
 
-
                     dataGrid.Columns.Add(new DataGridTextColumn()
                     {
-                        Header = "Date Paid",
+                        Header = "Month",
                         Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
-                        Binding = bindingDatePaid,
+                        Binding = bindingMonth,
 
                     });
-                    dataGrid.Columns.Add(new DataGridTextColumn()
-                    {
-                        Header = "Check Number",
-                        Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
-                        Binding = bindingCheckNumber,
-               
 
-                    });
-                    
+                    //dataGrid.Columns.Add(new DataGridTextColumn()
+                    //{
+                    //    Header = "Date Paid",
+                    //    Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
+                    //    Binding = bindingDatePaid,
+
+                    //});
+                    //dataGrid.Columns.Add(new DataGridTextColumn()
+                    //{
+                    //    Header = "Check Number",
+                    //    Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
+                    //    Binding = bindingCheckNumber,
+
+
+                    //});
+
                     dataGrid.Columns.Add(new DataGridTextColumn()
                     {
-                        Header = "Amount Paid",
+                        Header = "Amount",
                         Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
                         Binding = bindingIncomeAmount,
 
@@ -90,7 +91,7 @@ namespace SimpleBookKeeping.View
 
                     dataGrid.Columns.Add(new DataGridTextColumn()
                     {
-                        Header = "Total Income",
+                        Header = "Total",
                         Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
                         Binding = bindingIncomeTotal,
 
@@ -127,7 +128,7 @@ namespace SimpleBookKeeping.View
                     Binding bindingExpenseTotal = new Binding() { Path = new PropertyPath("ExpenseTotal") };
                     Binding bindingEntryNotes = new Binding() { Path = new PropertyPath("EntryNotes") };
                     dataGrid.ItemsSource = bookKeepingContext.ExpenseDBSet
-                        .Where(i => i.ExpenseCategory.Contains(category)).OrderBy(c => c.DatePaid).ToList();
+                        .Where(i => i.ExpenseCategory.Contains(category)).Where(d => d.DatePaid.Date.Year == DateTime.Now.Year).OrderBy(c => c.DatePaid).ToList();
                     
                     //dataGrid.Foreground = new SolidColorBrush(Colors.AntiqueWhite);
                     //dataGrid.Background = new SolidColorBrush(Color.FromArgb(255,70,70,70));
