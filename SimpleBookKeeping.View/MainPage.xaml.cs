@@ -26,13 +26,15 @@ using Windows.UI;
 using System.Text;
 using Windows.UI.ViewManagement;
 using System.ComponentModel;
-
+using System.Runtime.CompilerServices;
+using System.Collections.ObjectModel;
 
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
 namespace SimpleBookKeeping.View
 {
+
     class NamedColor
     {
         public NamedColor(string colorName, Color colorValue)
@@ -61,14 +63,14 @@ namespace SimpleBookKeeping.View
         public Pivot incomePivot = new Pivot();
         public PivotInflator pivotInflator = new PivotInflator();
         //public ICollection<string> expenseCategoryList { get; set; }
-
+        public TotalViewModel ViewModel { get; set; }
         public DataGrid currentExpenseDatagrid { get; set; }
         public DataGrid currentIncomeDatagrid { get; set; }
         public SeriesCollection SeriesCollection { get; set; }
         public List<string> Labels = new List<string>();
         public Func<double, string> Formatter { get; set; }
         public Func<ChartPoint, string> PointLabel { get; set; }
-   
+        public List<string> listTotal = new List<string>();
         public ExpenseCategories ExpenseCategories { get; set; }
         public IncomeCategories IncomeCategories { get; set; }
         public List<string> incomeCategoryList = new List<string>();
@@ -77,29 +79,53 @@ namespace SimpleBookKeeping.View
         public decimal TotalExpense;
         public IChartValues Values1 { get; set; } = new ChartValues<decimal>();
         public IChartValues Values2 { get; set; } = new ChartValues<decimal>();
-       
-   
+
+
         public MainPage()
         {
+
+            this.InitializeComponent();
             var titleBar = ApplicationView.GetForCurrentView().TitleBar;
-            
+
             // Set active window colors
             titleBar.ForegroundColor = Windows.UI.Colors.White;
             titleBar.BackgroundColor = Windows.UI.Color.FromArgb(255, 70, 70, 70);
             titleBar.ButtonForegroundColor = Windows.UI.Colors.White;
             titleBar.ButtonBackgroundColor = Windows.UI.Color.FromArgb(255, 70, 70, 70);
-            
-            this.InitializeComponent();
+
+            this.ViewModel = new TotalViewModel();
 
             this.ExpenseCategories = new ExpenseCategories();
             this.IncomeCategories = new IncomeCategories();
             HideAllGrids();
             DashboardGrid.Visibility = Visibility.Visible;
             ChartValues<double> cv = new ChartValues<double>();
+
             using (var context = new BookKeepingContext())
             {
                 context.IncomeDBSet.Load();
                 incomeCategoryList = context.IncomeDBSet.Select(income => income.IncomeCategory).Distinct().Cast<string>().ToList();
+                //this.ViewModel.TotalsList; 
+
+                this.ViewModel.IncomeTotalsList = context.IncomeDBSet.GroupBy(o => new { o.IncomeCategory })
+                    .Select(g => new
+                    {
+                        Category = g.Key.IncomeCategory,
+                        Sum = g.Sum(o => o.IncomeAmount).ToString("C2")
+                    }).ToDictionary(d => d.Category, d => d.Sum);
+
+                this.ViewModel.IncomeGrandTotal = context.IncomeDBSet.Sum(t => t.IncomeAmount).ToString("C2");
+
+                this.ViewModel.ExpenseTotalsList = context.ExpenseDBSet.GroupBy(o => new { o.ExpenseCategory })
+                    .Select(g => new
+                    {
+                        Category = g.Key.ExpenseCategory,
+                        Sum = g.Sum(o => o.AmountPaid).ToString("C2")
+                    }).ToDictionary(d => d.Category, d => d.Sum);
+
+                this.ViewModel.ExpenseGrandTotal = context.ExpenseDBSet.Sum(t => t.AmountPaid).ToString("C2");
+
+
                 Values1.Clear();
                 Values2.Clear();
                 TotalIncome = context.IncomeDBSet.Sum(t => t.IncomeAmount);
@@ -107,8 +133,9 @@ namespace SimpleBookKeeping.View
                 context.ExpenseDBSet.Load();
                 TotalExpense = context.ExpenseDBSet.Sum(t => t.AmountPaid);
                 Values2.Add(TotalExpense);
-                
+
             }
+
             PointLabel = chartPoint =>
                 string.Format("{0} ({1:P})", chartPoint.Y, chartPoint.Participation);
 
@@ -140,22 +167,33 @@ namespace SimpleBookKeeping.View
             DataContext = this;
         }
 
+
         private void DashBoardButton_Click(object sender, RoutedEventArgs e)
         {
 
             using (var context = new BookKeepingContext())
             {
                 context.IncomeDBSet.Load();
-                incomeCategoryList = context.IncomeDBSet.Select(income => income.IncomeCategory).Distinct().Cast<string>().ToList();
-                Values1.Clear();
-                Values2.Clear();
-                TotalIncome = context.IncomeDBSet.Sum(t => t.IncomeAmount);
-                Values1.Add(TotalIncome);
-                context.ExpenseDBSet.Load();
-                TotalExpense = context.ExpenseDBSet.Sum(t => t.AmountPaid);
-                Values2.Add(TotalExpense);
+                
+                this.ViewModel.IncomeTotalsList = context.IncomeDBSet.GroupBy(o => new { o.IncomeCategory })
+                    .Select(g => new
+                    {
+                        Category = g.Key.IncomeCategory,
+                        Sum = g.Sum(o => o.IncomeAmount).ToString("C2")
+                    }).ToDictionary(d => d.Category, d => d.Sum);
+
+                this.ViewModel.IncomeGrandTotal = context.IncomeDBSet.Sum(t => t.IncomeAmount).ToString("C2");
+
+                this.ViewModel.ExpenseTotalsList = context.ExpenseDBSet.GroupBy(o => new { o.ExpenseCategory })
+                    .Select(g => new
+                    {
+                        Category = g.Key.ExpenseCategory,
+                        Sum = g.Sum(o => o.AmountPaid).ToString("C2")
+                    }).ToDictionary(d => d.Category, d => d.Sum);
+
+                this.ViewModel.ExpenseGrandTotal = context.ExpenseDBSet.Sum(t => t.AmountPaid).ToString("C2");
             }
-                HideAllGrids();
+            HideAllGrids();
             DashboardGrid.Visibility = Visibility.Visible;
         }
 
@@ -226,22 +264,10 @@ namespace SimpleBookKeeping.View
             MenuExpenseButton.IsEnabled = true;
             ExpenseProgressRing.IsActive = false;
             loadingText.Visibility = Visibility.Collapsed;
-          
-        }
-
-        private async void grid_click(object sender, RoutedEventArgs e)
-        {
-            // expense_datagrid = (DataGrid)FindName("testgrid");
-            ContentDialog showID = new ContentDialog()
-            {
-                Title = "ID",
-                Content = "Ok",
-                CloseButtonText = "Ok"
-            };
-
-            ContentDialogResult result = await showID.ShowAsync();
 
         }
+
+       
         internal static void FindChildren<T>(List<T> results, DependencyObject startNode) where T : DependencyObject
         {
             int count = VisualTreeHelper.GetChildrenCount(startNode);
@@ -321,6 +347,7 @@ namespace SimpleBookKeeping.View
                     pivotItem = incomePivot.Items[incomePivot.SelectedIndex] as PivotItem;
                     TotalIncome = db.IncomeDBSet.Where(t => t.IncomeCategory == pivotItem.Header.ToString()).Sum(s => s.IncomeAmount);
                     incomeTotalTextBlock.Text = TotalIncome.ToString("C2");
+
                 }
             }
             catch (Exception)
@@ -518,10 +545,10 @@ namespace SimpleBookKeeping.View
                     try
                     {
                         ExpenseProgressRing.IsActive = true;
-                        IncomeEntry expEntry = currentIncomeDatagrid.SelectedItem as IncomeEntry;
-                        income = context.IncomeDBSet.Single(b => b.IncomeId == expEntry.IncomeId);
+                        IncomeEntry incEntry = currentIncomeDatagrid.SelectedItem as IncomeEntry;
+                        income = context.IncomeDBSet.Single(b => b.IncomeId == incEntry.IncomeId);
                         income.IncomeAmount = decimal.Parse(EditIncomeAmountPaidTextBox.Text);
-                       //income.CheckNumber = int.Parse(EditIncomeCheckNumberTextBox.Text);
+                        //income.CheckNumber = int.Parse(EditIncomeCheckNumberTextBox.Text);
                         income.DatePaid = EditIncomeDatePaidDatePicker.Date.DateTime;
                         income.IncomeCategory = EditIncomeCategoryTextBox.Text;
                         income.Month = EditIncomeDatePaidDatePicker.Date.DateTime.Month;
@@ -673,7 +700,7 @@ namespace SimpleBookKeeping.View
                 {
                     await db.ExpenseDBSet.LoadAsync();
                     //expenseCategoryList = db.ExpenseDBSet.Select(expense => expense.ExpenseCategory).Distinct().Cast<string>();
-                   
+
                     currentExpenseDatagrid.ItemsSource = db.ExpenseDBSet.Where(i => i.ExpenseCategory.Contains(pivotItem.Header.ToString())).Where(d => (d.DatePaid.Date.Year == Expense_From_DatePicker.Date.Year)).OrderBy(c => c.DatePaid).ToList();
 
                     currentExpenseDatagrid.SelectedIndex = 0;
@@ -872,7 +899,7 @@ namespace SimpleBookKeeping.View
         private void Clear_AddIncome_ControlElements()
         {
             AddIncomeCategoryTextBox.Text = "";
-           //AddIncomeCheckNumberTextBox.Text = "";
+            //AddIncomeCheckNumberTextBox.Text = "";
             AddIncomeDatePaidDatePicker.Date = DateTime.Now;
             AddIncomeEntryNotesTextBox.Text = "";
             AddIncomeAmountPaidTextBox.Text = "";
@@ -1141,6 +1168,7 @@ namespace SimpleBookKeeping.View
             Expense_OptionBar_EditButton.IsEnabled = true;
             Expense_OptionBar_DarkBackground_Button.IsEnabled = true;
             Expense_OptionBar_LightBackground_Button.IsEnabled = true;
+            Expense_OptionBar_DeleteButton.IsEnabled = true;
             //UIElement el = sender as UIElement;
             //el.ReleasePointerCapture();
             //var g = p.Columns.Where(h => h.Header.ToString() == "ExpenseId");
@@ -1197,16 +1225,31 @@ namespace SimpleBookKeeping.View
             currentIncomeDatagrid = sender as DataGrid;
             //DataGridRow dataGridRow = (DataGridRow)currentDataGrid.Columns.First(r => r.Header.ToString() == "Grocery");
             incomePivot.Tapped += IncomePivot_Tapped;
-            Income_OptionBar_EditButton.IsEnabled = true;
-            Income_OptionBar_DarkBackground_Button.IsEnabled = true;
-            Income_OptionBar_LightBackground_Button.IsEnabled = true;
+            if (currentIncomeDatagrid != null)
+            {
+                Income_OptionBar_EditButton.IsEnabled = true;
+                Income_OptionBar_DarkBackground_Button.IsEnabled = true;
+                Income_OptionBar_LightBackground_Button.IsEnabled = true;
+                Income_OptionBar_DeleteButton.IsEnabled = true;
+            }
         }
 
         private async void IncomePivot_Tapped(object sender, TappedRoutedEventArgs e)
         {
             PivotItem pivotItem = incomePivot.Items[incomePivot.SelectedIndex] as PivotItem;
             currentIncomeDatagrid = pivotItem.Content as DataGrid;
+            
+            
             currentIncomeDatagrid.SelectedIndex = 0;
+            if (currentIncomeDatagrid.SelectedItems.Count > 0)
+            {
+                Income_OptionBar_EditButton.IsEnabled = true;
+            }
+            else
+            {
+                Income_OptionBar_EditButton.IsEnabled = false;
+                return;
+            }
             using (var context = new BookKeepingContext())
             {
                 await context.IncomeDBSet.LoadAsync();
@@ -1214,7 +1257,8 @@ namespace SimpleBookKeeping.View
                 incomeTotalTextBlock.Text = context.IncomeDBSet.Where(t => t.IncomeCategory == pivotItem.Header.ToString()).Sum(s => s.IncomeAmount).ToString("C2");
 
             }
-            Income_OptionBar_EditButton.IsEnabled = true;
+           
+            
         }
 
         private async void ExpensePivot_Tapped(object sender, TappedRoutedEventArgs e)
@@ -1271,7 +1315,7 @@ namespace SimpleBookKeeping.View
                 {
                     ExpenseActivityList.ItemsSource = context.ExpenseDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                     ep.ItemsSource = context.ExpenseDBSet
-                        .Where(i => i.ExpenseCategory.Contains(category)).OrderBy(c => c.DatePaid).ToList();
+                        .Where(i => i.ExpenseCategory.Contains(category)).Where(d => d.DatePaid.Year == Expense_From_DatePicker.Date.Year).OrderBy(c => c.DatePaid).ToList();
 
                 }
                 catch (Exception)
@@ -1611,7 +1655,7 @@ namespace SimpleBookKeeping.View
                 {
                     IncomeActivityList.ItemsSource = context.IncomeDBSet.OrderByDescending(d => d.TimeStamp).ToList();
                     ep.ItemsSource = context.IncomeDBSet
-                        .Where(i => i.IncomeCategory.Contains(category)).OrderByDescending(c => c.DatePaid).ToList();
+                        .Where(i => i.IncomeCategory.Contains(category)).Where(d => d.DatePaid.Year == Income_From_DatePicker.Date.Year).OrderByDescending(c => c.DatePaid).ToList();
 
                 }
                 catch (Exception)
@@ -1727,6 +1771,253 @@ namespace SimpleBookKeeping.View
             }
 
             IncomeProgressRing.IsActive = false;
+        }
+
+        private async void Income_OptionBar_DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            ContentDialog Income_DeleteEntry_Dialog = new ContentDialog
+            {
+                Title = "Delete Entry Permanently?",
+                Content = "This will permanently remove the selected entry, are you sure you want to continue?",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel"
+            };
+
+
+            ContentDialogResult result = await Income_DeleteEntry_Dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                PivotItem pivotItem = new PivotItem();
+                pivotItem = incomePivot.Items[incomePivot.SelectedIndex] as PivotItem;
+                IncomeProgressRing.IsActive = true;
+                try
+                {
+
+
+                    using (var db = new BookKeepingContext())
+                    {
+                        await db.IncomeDBSet.LoadAsync();
+                        IncomeEntry incEntry = currentIncomeDatagrid.SelectedItem as IncomeEntry;
+                        var income = db.IncomeDBSet.Single(b => b.IncomeId == incEntry.IncomeId);
+                        db.IncomeDBSet.Remove(income);
+                        db.SaveChanges();
+                        //incomeCategoryList = db.IncomeDBSet.Select(income => income.IncomeCategory).Distinct().Cast<string>();
+                        if(incomePivot.Items.Count > 1)
+                        {
+                            currentIncomeDatagrid.ItemsSource = db.IncomeDBSet.Where(i => i.IncomeCategory.Contains(pivotItem.Header.ToString())).Where(d => (d.DatePaid.Date.Year == Income_From_DatePicker.Date.Year)).OrderBy(c => c.DatePaid).ToList();
+                        }
+                        
+                    }
+                    
+                    Income_OptionBar_DeleteButton.IsEnabled = false;
+                    currentIncomeDatagrid.SelectedIndex = 0;
+
+                }
+                catch (Exception)
+                {
+                    IncomeProgressRing.IsActive = false;
+                    ContentDialog Income_ErrorDeleting_Dialog = new ContentDialog
+                    {
+                        Title = "Unexpected Error",
+                        Content = "Unexpected error occured while attempting to delete the entry. Please try again or contact technical support.",
+                        CloseButtonText = "Ok"
+                    };
+
+                    ContentDialogResult errorResult = await Income_ErrorDeleting_Dialog.ShowAsync();
+                }
+
+                IncomeProgressRing.IsActive = false;
+            }
+            else
+            {
+                Income_OptionBar_DeleteButton.IsEnabled = false;
+                return;
+            }
+
+
+
+        }
+
+        private async void Income_AddCategory_Click(object sender, RoutedEventArgs e)
+        {
+            using (var context = new BookKeepingContext())
+            {
+                context.IncomeDBSet.Load();
+                incomeCategoryList = context.IncomeDBSet.Select(income => income.IncomeCategory).Distinct().Cast<string>().ToList();
+            }
+                string inputString;
+
+            inputString = await InputStringDialogAsync(
+            "What would you like to name the new Category?",
+                    "Groceries",
+                    "Ok",
+                    "Cancel"
+        );
+            if (String.IsNullOrEmpty(inputString))
+            { return; }
+            else if (incomeCategoryList.Contains(inputString, StringComparer.OrdinalIgnoreCase))
+            {
+                ContentDialog Duplicate_CategoryDialog = new ContentDialog
+                {
+                    Title = "Duplicate Category Name",
+                    Content = "A category with the name " + inputString + " already exists. Please choose a different name and try again.",
+                    CloseButtonText = "Ok"
+                };
+
+                ContentDialogResult result = await Duplicate_CategoryDialog.ShowAsync();
+                return;
+            }
+            
+            DatagridFactory datagridFactory = new DatagridFactory();
+            incomePivot.Items.Add(new PivotItem
+            {
+                Header = inputString,
+                Content = datagridFactory.DatagridFactory_Make(inputString, 0, bookKeepingContext, In_MouseUp, Income_Datagrid_Sorting)
+            });
+
+            //IncomeEntry incomeEntry = new IncomeEntry
+            //{
+            //    IncomeAmount = 0,
+            //    //CheckNumber = int.Parse(AddIncomeCheckNumberTextBox.Text),
+            //    DatePaid = DateTime.Now,
+            //    IncomeCategory = inputString,
+            //    Month = DateTime.Now.Month,
+            //    TimeStamp = DateTime.Now,
+            //    EntryNotes = "Edit first entry",
+            //    IncomeTotal = TotalIncome
+            //};
+
+            //using (var context = new BookKeepingContext())
+            //{
+            //    //context.IncomeDBSet.Load();
+            //    try
+            //    {
+            //        context.IncomeDBSet.Add(incomeEntry);
+            //        context.SaveChanges();
+            //        await context.IncomeDBSet.LoadAsync();
+            //        currentIncomeDatagrid.ItemsSource = context.IncomeDBSet.Where(ee => ee.IncomeCategory == inputString);
+
+            //    }
+            //    catch (Exception)
+            //    {
+            //        throw;
+            //    }
+            //}
+            incomePivot.SelectedIndex = incomePivot.Items.Count - 1;
+            Income_OptionBar_EditButton.IsEnabled = false;
+            RefreshIncomeDatagrid(inputString, currentIncomeDatagrid);
+
+
+        }
+        public static async Task<string> InputStringDialogAsync(string title, string defaultText, string okButtonText, string cancelButtonText)
+        {
+            var inputTextBox = new TextBox
+            {
+                AcceptsReturn = false,
+                Height = 32,
+                Text = defaultText,
+                SelectionStart = defaultText.Length,
+                BorderThickness = new Thickness(1),
+                // BorderBrush = new SolidColorBrush((Color)Application.Current.Resources["CustomDialogBorderColor"])
+            };
+            var dialog = new ContentDialog
+            {
+                Content = inputTextBox,
+                Title = title,
+                IsSecondaryButtonEnabled = true,
+                PrimaryButtonText = okButtonText,
+                SecondaryButtonText = cancelButtonText
+            };
+
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            {
+                return inputTextBox.Text;
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+        private async void Expense_OptionBar_DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            ContentDialog Expense_DeleteEntry_Dialog = new ContentDialog
+            {
+                Title = "Delete Entry Permanently?",
+                Content = "This will permanently remove the selected entry, are you sure you want to continue?",
+                PrimaryButtonText = "Delete",
+                CloseButtonText = "Cancel"
+            };
+
+
+            ContentDialogResult result = await Expense_DeleteEntry_Dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                PivotItem pivotItem = new PivotItem();
+                pivotItem = expensePivot.Items[expensePivot.SelectedIndex] as PivotItem;
+                ExpenseProgressRing.IsActive = true;
+                try
+                {
+
+
+                    using (var db = new BookKeepingContext())
+                    {
+                        await db.ExpenseDBSet.LoadAsync();
+                        ExpenseEntry expEntry = currentExpenseDatagrid.SelectedItem as ExpenseEntry;
+                        var expense = db.ExpenseDBSet.Single(b => b.ExpenseId == expEntry.ExpenseId);
+                        db.ExpenseDBSet.Remove(expense);
+                        db.SaveChanges();
+                        //expenseCategoryList = db.ExpenseDBSet.Select(expense => expense.ExpenseCategory).Distexpt().Cast<string>();
+
+                        currentExpenseDatagrid.ItemsSource = db.ExpenseDBSet.Where(i => i.ExpenseCategory.Contains(pivotItem.Header.ToString())).Where(d => (d.DatePaid.Date.Year == Expense_From_DatePicker.Date.Year)).OrderBy(c => c.DatePaid).ToList();
+
+                        currentExpenseDatagrid.SelectedIndex = 0;
+                        Expense_OptionBar_DeleteButton.IsEnabled = false;
+                    }
+                }
+                catch (Exception)
+                {
+
+                    ContentDialog Expense_ErrorDeleting_Dialog = new ContentDialog
+                    {
+                        Title = "Unexpected Error",
+                        Content = "Unexpected error occured while attempting to delete the entry. Please try again or contact technical support.",
+                        CloseButtonText = "Ok"
+                    };
+
+                    ContentDialogResult errorResult = await Expense_ErrorDeleting_Dialog.ShowAsync();
+                }
+
+                ExpenseProgressRing.IsActive = false;
+            }
+            else
+            {
+                Expense_OptionBar_DeleteButton.IsEnabled = false;
+                return;
+            }
+
+
+        }
+
+        private async void Button_Click(object sender, RoutedEventArgs e)
+        {            //using (var db = new BookKeepingContext())
+                     //{
+                     //    await db.ExpenseDBSet.LoadAsync();
+                     //    this.ViewModel.TotalsList = db.IncomeDBSet.GroupBy(o => new { o.IncomeCategory })
+                     //        .Select(g => new
+                     //        {
+                     //            g.Key.IncomeCategory,
+                     //            Sum = g.Sum(o => o.IncomeAmount)
+                     //        }.ToString()).ToList<string>();
+                     //}
+
+
+        }
+
+        private void TotalIncomeCategoryListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
         }
     }
 
