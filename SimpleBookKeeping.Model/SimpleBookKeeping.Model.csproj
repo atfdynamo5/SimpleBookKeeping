@@ -5,7 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlserver" Version="2.1.4" />
+    <Compile Remove="Migrations\20190303022226_removedCheckNumber-AddedPercentage.cs" />
+    <Compile Remove="Migrations\20190303041506_t.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlserver" Version="2.2.2" />
   </ItemGroup>
 
 </Project>

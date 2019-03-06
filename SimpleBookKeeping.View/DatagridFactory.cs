@@ -6,9 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Toolkit.Uwp.UI.Controls;
 using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml;
-
 using SimpleBookKeeping.Model;
-
 using Microsoft.EntityFrameworkCore;
 using Windows.UI.Xaml.Media;
 using Windows.UI;
@@ -25,7 +23,6 @@ namespace SimpleBookKeeping.View
 
                 if (DBSetType == 0)
                 {
-                    
                     DataGrid dataGrid = new DataGrid();
                     dataGrid.Name = category + "IncomeDatagrid";
                     dataGrid.IsReadOnly = true;
@@ -33,9 +30,7 @@ namespace SimpleBookKeeping.View
                     dataGrid.AutoGenerateColumns = false;
                     dataGrid.CanUserSortColumns = true;
                     dataGrid.Sorting += DataGrid_ColumnSort_Handler;
-                    
                     // DataGridTextColumn gridTextColumn = new DataGridTextColumn();
-
                     // binding.ElementName = "EntryNotes";
                     Binding bindingMonth = new Binding() { Path = new PropertyPath("Month") };
                     Binding bindingIncomeId = new Binding() { Path = new PropertyPath("IncomeId") };
@@ -43,8 +38,7 @@ namespace SimpleBookKeeping.View
                     Binding bindingIncomeAmount = new Binding() { Path = new PropertyPath("IncomeAmount") };
                   //Binding bindingCheckNumber = new Binding() { Path = new PropertyPath("CheckNumber") };
                     Binding bindingEntryNotes = new Binding() { Path = new PropertyPath("EntryNotes") };
-                    Binding bindingIncomeTotal = new Binding() { Path = new PropertyPath("IncomeTotal") };
-                    
+                  //Binding bindingIncomeTotal = new Binding() { Path = new PropertyPath("IncomeTotal") };
                     // dataGrid.DataContext = bookKeepingContext;
                     dataGrid.ItemsSource = bookKeepingContext.IncomeDBSet
                         .Where(i => i.IncomeCategory.Contains(category)).Where(d => d.DatePaid.Date.Year == DateTime.Now.Year).ToList();
@@ -54,9 +48,8 @@ namespace SimpleBookKeeping.View
                         Header = "ID",
                         Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
                         Binding = bindingIncomeId,
-
                     });
-
+                   
                     dataGrid.Columns.Add(new DataGridTextColumn()
                     {
                         Header = "Month",
@@ -88,7 +81,7 @@ namespace SimpleBookKeeping.View
                         Binding = bindingIncomeAmount,
 
                     });
-
+                    /*
                     dataGrid.Columns.Add(new DataGridTextColumn()
                     {
                         Header = "Total",
@@ -96,7 +89,7 @@ namespace SimpleBookKeeping.View
                         Binding = bindingIncomeTotal,
 
                     });
-
+                    */
                     dataGrid.Columns.Add(new DataGridTextColumn()
                     {
                         Header = "Entry Notes",
@@ -133,7 +126,7 @@ namespace SimpleBookKeeping.View
                     //dataGrid.Foreground = new SolidColorBrush(Colors.AntiqueWhite);
                     //dataGrid.Background = new SolidColorBrush(Color.FromArgb(255,70,70,70));
                     //dataGrid.FontFamily = new FontFamily("Calibri");
-
+                    
                     dataGrid.Columns.Add(new DataGridTextColumn()
                     {
                         Header = "Month",
@@ -206,6 +199,91 @@ namespace SimpleBookKeeping.View
                     // dataGrid.DataContext = bookKeeperContext;
                     dataGrid.PointerPressed += pointerEventHandler;
                     
+                    return dataGrid;
+                } else if (DBSetType == 2) //2 is of type gas
+                {
+
+                    DataGrid dataGrid = new DataGrid();
+                    dataGrid.Name = "GasolineIncomeDatagrid";
+                    dataGrid.IsReadOnly = true;
+                    bookKeepingContext.IncomeDBSet.Load();
+                    dataGrid.AutoGenerateColumns = false;
+                    dataGrid.CanUserSortColumns = true;
+                    dataGrid.Sorting += DataGrid_ColumnSort_Handler;
+
+                    // DataGridTextColumn gridTextColumn = new DataGridTextColumn();
+
+                    // binding.ElementName = "EntryNotes";
+                    Binding bindingMonth = new Binding() { Path = new PropertyPath("Month") };
+                    Binding bindingIncomeId = new Binding() { Path = new PropertyPath("IncomeId") };
+                    Binding bindingIncomeAmount = new Binding() { Path = new PropertyPath("IncomeAmount") };
+                    Binding bindingEntryNotes = new Binding() { Path = new PropertyPath("EntryNotes") };
+                    Binding bindingIncomeTotal = new Binding() { Path = new PropertyPath("IncomeTotal") };
+
+                    // dataGrid.DataContext = bookKeepingContext;
+                    dataGrid.ItemsSource = bookKeepingContext.IncomeDBSet
+                        .Where(i => i.IncomeCategory.Contains(category)).Where(d => d.DatePaid.Date.Year == DateTime.Now.Year).ToList();
+
+                    dataGrid.Columns.Add(new DataGridTextColumn()
+                    {
+                        Header = "ID",
+                        Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
+                        Binding = bindingIncomeId,
+
+                    });
+
+                    dataGrid.Columns.Add(new DataGridTextColumn()
+                    {
+                        Header = "Month",
+                        Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
+                        Binding = bindingMonth,
+
+                    });
+
+                    //dataGrid.Columns.Add(new DataGridTextColumn()
+                    //{
+                    //    Header = "Date Paid",
+                    //    Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
+                    //    Binding = bindingDatePaid,
+
+                    //});
+                    //dataGrid.Columns.Add(new DataGridTextColumn()
+                    //{
+                    //    Header = "Check Number",
+                    //    Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
+                    //    Binding = bindingCheckNumber,
+
+
+                    //});
+
+                    dataGrid.Columns.Add(new DataGridTextColumn()
+                    {
+                        Header = "Gallons",
+                        Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
+                        Binding = bindingIncomeAmount,
+
+                    });
+
+                    dataGrid.Columns.Add(new DataGridTextColumn()
+                    {
+                        Header = "Total Gallons Sold",
+                        Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
+                        Binding = bindingIncomeTotal,
+
+                    });
+
+                    dataGrid.Columns.Add(new DataGridTextColumn()
+                    {
+                        Header = "Entry Notes",
+                        Width = new DataGridLength(1, DataGridLengthUnitType.Auto),
+                        Binding = bindingEntryNotes,
+
+                    });
+
+                    //dataGrid.DataContext = bookKeeperContext;
+
+                    dataGrid.PointerPressed += pointerEventHandler;
+
                     return dataGrid;
                 }
                 else throw new ArgumentException("Invalid DBSet Name(Category)");

@@ -39,7 +39,7 @@ namespace SimpleBookKeeping.Model.Migrations
                     DatePaid = table.Column<DateTime>(nullable: false),
                     IncomeAmount = table.Column<decimal>(maxLength: 50, nullable: false),
                     IncomeCategory = table.Column<string>(maxLength: 50, nullable: true),
-                    CheckNumber = table.Column<int>(maxLength: 20, nullable: false),
+                    Percentage = table.Column<decimal>(maxLength: 10, nullable: false),
                     EntryNotes = table.Column<string>(maxLength: 5000, nullable: true),
                     IncomeTotal = table.Column<decimal>(maxLength: 500, nullable: false)
                 },

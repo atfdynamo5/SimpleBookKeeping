@@ -12,8 +12,9 @@ namespace SimpleBookKeeping.Model
         public DateTime DatePaid { get; set; }
         public Decimal IncomeAmount { get; set; }
         public string IncomeCategory { get; set; }
-        public int CheckNumber { get; set; }
+        public decimal Percentage { get; set; }
         public string EntryNotes { get; set; }
         public Decimal IncomeTotal { get; set; }
+    
     }
 }

@@ -11,12 +11,14 @@
     mc:Ignorable="d"
     
     d:DataContext="{d:DesignInstance local:MainPage}"
-    xmlns:lvc="using:LiveCharts.Uwp"
-    
     MaxWidth="1920"
     MaxHeight="1080"
     xmlns:viewmodel="using:SimpleBookKeeping.View"
+    xmlns:catVM="using:SimpleBookKeeping.Model"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Page.Resources>
+      
+    </Page.Resources>
     <Grid Background="#FFE0DABB" >
         <Grid.ColumnDefinitions>
 
@@ -27,28 +29,6 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-
-        <!--   <Grid Grid.ColumnSpan="2" Background="#FF444A50">
-            <Grid HorizontalAlignment="Right" Width="120">
-
-                <StackPanel Orientation="Horizontal">
-                    <Button x:Name="MinimizeButton"  Width="25" Height="25" Background="{x:Null}" Foreground="White" Click="MinimizeButton_Click">
-
-                    </Button>
-                    <Button x:Name="RestoreButton"  Width="25" Height="25" Background="{x:Null}" Foreground="White" Click="RestoreButton_Click" Margin="0,0,0,4">
-
-                    </Button>
-                    <Button x:Name="MaximizeButton" Width="25" Height="25" Background="{x:Null}" Foreground="White" Click="MaximizeButton_Click" Margin="0,0,0,4">
-
-                    </Button>
-                    <Button x:Name="CloseButton"  Margin="10,0,0,0" Width="25" Height="25" Background="{x:Null}" Foreground="White" Click="CloseButton_Click">
-
-                    </Button>
-                </StackPanel>
-
-            </Grid>
-        </Grid>
--->
         <Grid Grid.Row="1" Grid.Column="0" Background="#FFE0DABB">
             <StackPanel>
                 <Image Source="Assets\mainlogo.png" Height="200" Stretch="UniformToFill"></Image>
@@ -138,86 +118,86 @@
         </Grid>
 
         <Grid x:Name="DashboardGrid"  MinWidth="1200" Grid.Column="1" Grid.Row="1" Visibility="Visible" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-
-            <Grid Margin="20,20,0,0" Height="Auto" Width="Auto">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="auto"/>
-                    <RowDefinition Height="auto"/>
-                    <RowDefinition Height="auto"/>
-                    <RowDefinition Height="auto"/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" MaxWidth="600"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Row="0" Grid.Column="0" Margin="10,0,0,0" FontWeight="Bold" FontSize="30">Income Totals List</TextBlock>
-                <ScrollViewer  Grid.Column="0" Grid.Row="0" Padding="20,30,0,0" MaxHeight="700">
-                    <ListView ItemsSource="{x:Bind Path=ViewModel.IncomeTotalsList, Mode=OneWay}" HorizontalAlignment="Left" Width="auto" Margin="0,5,0,10" VerticalAlignment="Stretch">
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="320"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="auto"/>
-                                    </Grid.RowDefinitions>
-
-
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                        <TextBlock  Padding="5,15,5,0" FontSize="25" Text="{Binding Path=Key}"  />
-                                        <TextBlock FontSize="25" Padding="0,15,5,10" Text=":" />
-                                    </StackPanel>
-                                    <TextBlock Grid.Column="1" HorizontalAlignment="Right" Padding="5,15,5,10" FontSize="25" Text="{Binding Value}" />
+            <ScrollViewer>
+                <Grid Margin="20,20,0,0" Height="Auto" Width="Auto">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MaxWidth="600"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Margin="10,0,0,0" FontWeight="Bold" FontSize="30">Income Totals List</TextBlock>
+                    <ScrollViewer  Grid.Column="0" Grid.Row="0" Padding="20,30,0,0" MaxHeight="700">
+                        <ListView  ItemsSource="{x:Bind Path=ViewModel.IncomeTotals, Mode=OneWay}" HorizontalAlignment="Left" Width="auto" Margin="0,5,0,10" VerticalAlignment="Stretch">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="320"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="auto"/>
+                                        </Grid.RowDefinitions>
 
 
-
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                </ScrollViewer>
-                <TextBlock Grid.Row="0" Grid.Column="1" Margin="10,0,0,0" FontWeight="Bold" FontSize="30">Expense Totals List</TextBlock>
-                <ScrollViewer Grid.Column="1" Grid.Row="0" Padding="20,30,0,0" MaxHeight="700">
-                    <ListView  ItemsSource="{x:Bind Path=ViewModel.ExpenseTotalsList, Mode=OneWay}" HorizontalAlignment="Left" Width="auto" Margin="0,5,0,10" VerticalAlignment="Stretch">
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="320"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="auto"/>
-                                    </Grid.RowDefinitions>
-
-
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                        <TextBlock  Padding="5,15,5,0" FontSize="25" Text="{Binding Path=Key}"  />
-                                        <TextBlock FontSize="25" Padding="0,15,5,10" Text=":" />
-                                    </StackPanel>
-                                    <TextBlock Grid.Column="1" HorizontalAlignment="Right" Padding="5,15,5,10" FontSize="25" Text="{Binding Value}" />
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                            <TextBlock  Padding="5,15,5,0" FontSize="25" Text="{Binding Path=Category}"  />
+                                            <TextBlock FontSize="25" Padding="0,15,5,10" Text=":" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" HorizontalAlignment="Right" Padding="5,15,5,10" FontSize="25" Text="{Binding Path=TotalValue}" />
 
 
 
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                </ScrollViewer>
-                <Line Grid.Column="0" Grid.Row="2" Stroke="Red"  X2="510" Height="10"/>
-                <StackPanel Grid.Column="0" Grid.Row="3" Orientation="Horizontal"  >
-                    <TextBlock  FontWeight="Bold" FontSize="30" Margin="15,0,0,0" >Grand Total:</TextBlock>
-                    <TextBlock Padding="10,0,0,0" FontSize="30" Margin="146,0,0,0" FontWeight="SemiBold" Text="{x:Bind ViewModel.IncomeGrandTotal, Mode=OneWay}" />
-                </StackPanel>
-                <Line Grid.Column="1" Grid.Row="2" Stroke="Red" X2="510" Height="10"/>
-                <StackPanel Grid.Column="1" Grid.Row="3" Orientation="Horizontal" >
-                    <TextBlock  FontWeight="Bold" FontSize="30" Margin="15,0,0,0" >Grand Total:</TextBlock>
-                    <TextBlock Padding="10,0,0,0" FontSize="30" Margin="146,0,0,0" FontWeight="SemiBold" Text="{x:Bind ViewModel.ExpenseGrandTotal, Mode=OneWay}" />
-                </StackPanel>
-            </Grid>
-            
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </ScrollViewer>
+                    <TextBlock Grid.Row="0" Grid.Column="1" Margin="10,0,0,0" FontWeight="Bold" FontSize="30">Expense Totals List</TextBlock>
+                    <ScrollViewer Grid.Column="1" Grid.Row="0" Padding="20,30,0,0" MaxHeight="700">
+                        <ListView  ItemsSource="{x:Bind Path=ViewModel.ExpenseTotals, Mode=OneWay}" HorizontalAlignment="Left" Width="auto" Margin="0,5,0,10" VerticalAlignment="Stretch">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="320"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="auto"/>
+                                        </Grid.RowDefinitions>
+
+
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                            <TextBlock  Padding="5,15,5,0" FontSize="25" Text="{Binding Path=Category}"  />
+                                            <TextBlock FontSize="25" Padding="0,15,5,10" Text=":" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" HorizontalAlignment="Right" Padding="5,15,5,10" FontSize="25" Text="{Binding Path=TotalValue}" />
+
+
+
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </ScrollViewer>
+                    <Line Grid.Column="0" Grid.Row="2" Stroke="Red"  X2="510" Height="10"/>
+                    <StackPanel Grid.Column="0" Grid.Row="3" Orientation="Horizontal"  >
+                        <TextBlock  FontWeight="Bold" FontSize="30" Margin="15,0,0,0" >Grand Total:</TextBlock>
+                        <TextBlock Padding="10,0,0,0" FontSize="30" Margin="146,0,0,0" FontWeight="SemiBold" Text="{x:Bind ViewModel.IncomeGrandTotal, Mode=OneWay}" />
+                    </StackPanel>
+                    <Line Grid.Column="1" Grid.Row="2" Stroke="Red" X2="510" Height="10"/>
+                    <StackPanel Grid.Column="1" Grid.Row="3" Orientation="Horizontal" >
+                        <TextBlock  FontWeight="Bold" FontSize="30" Margin="15,0,0,0" >Grand Total:</TextBlock>
+                        <TextBlock Padding="10,0,0,0" FontSize="30" Margin="146,0,0,0" FontWeight="SemiBold" Text="{x:Bind ViewModel.ExpenseGrandTotal, Mode=OneWay}" />
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
 
             <!--    
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
@@ -247,6 +227,7 @@
             </StackPanel>
                      -->
         </Grid>
+
         <Grid x:Name="ExpenseGrid" Grid.Column="1" MinWidth="800" Grid.Row="1" Background="LightGoldenrodYellow"   Margin="0 0 0 0" Visibility="Collapsed" >
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"></ColumnDefinition>
@@ -535,8 +516,94 @@
                 <ProgressRing x:Name="IncomeProgressRing" Height="120" Width="120" Foreground="Blue" Margin="40" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 <TextBlock x:Name="IncomeLoadingText" Visibility="Collapsed" HorizontalAlignment="Center" Foreground="Gray"><Run Text="Loading, please wait..."/></TextBlock>
             </StackPanel>
-            <Grid Grid.Column="0" x:Name="IncomeGrid_Pivot">
+            <Grid Grid.Column="0" x:Name="IncomeGrid_Pivot" Visibility="Visible">
+                <Pivot x:Name="incomePivot" Visibility="Visible" ItemsSource="{x:Bind IncomePivotVM}">
+                    <Pivot.HeaderTemplate>
+                        <DataTemplate x:DataType="viewmodel:IncomeDataGridModel">
+                            <TextBlock Text="{x:Bind PivotHeader}"/>
+                        </DataTemplate>
+                    </Pivot.HeaderTemplate>
+                    <Pivot.ItemTemplate>
+                        <DataTemplate x:DataType="viewmodel:IncomeDataGridModel">
+                            <PivotItem Content="{x:Bind DataGrid}"/>
+                        </DataTemplate>
+                    </Pivot.ItemTemplate>
+                </Pivot>
+                <!--
+                
+                <Pivot Visibility="Collapsed" x:Name="CategoryPivot" ItemsSource="{x:Bind IncomeCategoriesViewModel.Categories}">
+                    <Pivot.HeaderTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Text="{x:Bind}"/>
+                        </DataTemplate>
+                    </Pivot.HeaderTemplate>
+                    <Pivot.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Text="{x:Bind}"/>
+                        </DataTemplate>
+                    </Pivot.ItemTemplate>
+                </Pivot>
+              
+                <Pivot Visibility="Collapsed" ItemsSource="{x:Bind IncomeModelList}">
+                    <Pivot.HeaderTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Text="test"/>
+                        </DataTemplate>
+                    </Pivot.HeaderTemplate>
+                    <Pivot.ItemTemplate>
+                        
+                            <DataTemplate x:DataType="local:IncomeModel">
+                                <controls:DataGrid x:Name="McDataGrid" Margin="0" AutoGenerateColumns="False">
+                                    <controls:DataGrid.Columns>
+                                        <controls:DataGridTextColumn Binding="{Binding IncomeId}" Header="Author ID" IsReadOnly="True"/>
+                                        <controls:DataGridTextColumn Header="Name" Width="140" Binding="{Binding DatePaid}"  >
+                                            <controls:DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextWrapping" Value="Wrap"/>
+                                                </Style>
+                                            </controls:DataGridTextColumn.ElementStyle>
+                                            <controls:DataGridTextColumn.EditingElementStyle>
+                                                <Style TargetType="TextBox">
+                                                    <Setter Property="Foreground" Value="Blue"/>
+                                                </Style>
+                                            </controls:DataGridTextColumn.EditingElementStyle>
+                                        </controls:DataGridTextColumn>
 
+                                        <controls:DataGridTemplateColumn Header="DOB"  Width="80">
+                                            <controls:DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding EntryNotes}" Margin="4"/>
+                                                </DataTemplate>
+                                            </controls:DataGridTemplateColumn.CellTemplate>
+
+                                        </controls:DataGridTemplateColumn>
+
+                                        <controls:DataGridTextColumn Header="Book Title" Width="240" Binding="{Binding IncomeCategory}" >
+                                            <controls:DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextWrapping" Value="Wrap"/>
+                                                </Style>
+                                            </controls:DataGridTextColumn.ElementStyle>
+                                            <controls:DataGridTextColumn.EditingElementStyle>
+                                                <Style TargetType="TextBox">
+                                                    <Setter Property="Foreground" Value="Blue"/>
+                                                </Style>
+                                            </controls:DataGridTextColumn.EditingElementStyle>
+                                        </controls:DataGridTextColumn>
+
+                                    </controls:DataGrid.Columns>
+                                </controls:DataGrid>
+                            </DataTemplate>
+
+                    </Pivot.ItemTemplate>
+                            
+                </Pivot>
+-->
+                <!--
+                <Pivot x:Name="incomePivot" Visibility="Collapsed">
+
+                </Pivot>
+                -->
             </Grid>
             <Grid Grid.Row="1" BorderBrush="DarkGray" BorderThickness=".7" VerticalAlignment="Bottom" Padding="9">
                 <StackPanel Orientation="Horizontal">
@@ -640,12 +707,8 @@
                                 <FontIcon Grid.Column="0" Grid.Row="1" Margin="0 0 0 0" HorizontalAlignment="Left" FontFamily="Segoe MDL2 Assets" Glyph="&#xED28;"/>
                                 <TextBlock Text="Date:" Grid.Column="0" HorizontalAlignment="Left" Margin="27 0 0 0" Grid.Row="1" VerticalAlignment="Center"/>
                                 <DatePicker x:Name="AddIncomeDatePaidDatePicker" DayVisible="False" MinWidth="170" Grid.Column="1" MonthFormat="{}{month.abbreviated}" HorizontalAlignment="Stretch" Margin="3" Grid.Row="1" VerticalAlignment="Center"/>
-                                <!--  <FontIcon Grid.Column="0" Grid.Row="2" Margin="0 0 0 0" HorizontalAlignment="Left" FontFamily="Segoe MDL2 Assets" Glyph="&#xF5A5;"/>
-                                <TextBlock Text="Check Number:" Grid.Column="0" Margin="27 0 0 0" HorizontalAlignment="Left" Grid.Row="2" VerticalAlignment="Center"/>
-                                <TextBox x:Name="AddIncomeCheckNumberTextBox" Grid.Column="1" HorizontalAlignment="Stretch" Height="23" Margin="3" Grid.Row="2" Text="{Binding CheckNumber, Mode=TwoWay}" VerticalAlignment="Center" extensions:TextBoxRegex.ValidationMode="Forced" extensions:TextBoxRegex.ValidationType="Decimal"/>
-                             -->
-                                <FontIcon Grid.Column="0" Grid.Row="2" Margin="0 0 0 0" HorizontalAlignment="Left" FontFamily="Segoe MDL2 Assets" Glyph="&#xEC59;"/>
-                                <TextBlock Text="Amount:" Grid.Column="0" HorizontalAlignment="Left" Margin="27 0 0 0" Grid.Row="2" VerticalAlignment="Center"/>
+                                <FontIcon x:Name="Income_AddAmountFontIcon" Grid.Column="0" Grid.Row="2" Margin="0 0 0 0" HorizontalAlignment="Left" FontFamily="Segoe MDL2 Assets" Glyph="&#xEC59;"/>
+                                <TextBlock x:Name="Income_AddAmountText" Text="Amount:" Grid.Column="0" HorizontalAlignment="Left" Margin="27 0 0 0" Grid.Row="2" VerticalAlignment="Center"/>
                                 <TextBox x:Name="AddIncomeAmountPaidTextBox" Grid.Column="1" HorizontalAlignment="Stretch" Height="23" Margin="3" Grid.Row="2" Text="{Binding AmountPaid, Mode=TwoWay}" VerticalAlignment="Center" extensions:TextBoxRegex.ValidationMode="Forced" extensions:TextBoxRegex.ValidationType="Decimal"/>
                                 <FontIcon Grid.Column="0" Grid.Row="3" Margin="0 0 0 0" HorizontalAlignment="Left" FontFamily="Segoe MDL2 Assets" Glyph="&#xEB7E;"/>
                                 <TextBlock Text="Entry Notes:" Grid.Column="0" HorizontalAlignment="Left" Margin="27 0 0 0" Grid.Row="3" VerticalAlignment="Center"/>
@@ -657,6 +720,12 @@
                                         
                                         Height="80">
                                 </TextBox>
+                                <Grid x:Name="AddIncomePercentGrid" Visibility="Collapsed" Grid.Column="0" Grid.Row="5" Grid.ColumnSpan="2">
+                                    <FontIcon Grid.Column="0" Grid.Row="3" Margin="0 0 0 0" HorizontalAlignment="Left" FontFamily="Segoe MDL2 Assets" Glyph="&#xE94C;"/>
+                                    <TextBlock Text="Percent" HorizontalAlignment="Left" Margin="27 0 0 0" Grid.Row="3" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="AddIncomePercentTextBox" Width="180" HorizontalAlignment="Right" Height="23" Margin="3" Grid.Row="3" Text="{Binding AmountPaid, Mode=TwoWay}" VerticalAlignment="Center" extensions:TextBoxRegex.ValidationMode="Forced" extensions:TextBoxRegex.ValidationType="Decimal"/>
+                                </Grid>
+
                             </Grid>
 
                         </Grid>
@@ -726,10 +795,6 @@
                                 <FontIcon Grid.Column="0" Grid.Row="1" Margin="0 0 0 0" HorizontalAlignment="Left" FontFamily="Segoe MDL2 Assets" Glyph="&#xED28;"/>
                                 <TextBlock Text="Date:" Grid.Column="0" HorizontalAlignment="Left" Margin="27 0 0 0" Grid.Row="1" VerticalAlignment="Center"/>
                                 <DatePicker x:Name="EditIncomeDatePaidDatePicker" DayVisible="False" MonthFormat="{}{month.abbreviated}" MinWidth="170" Grid.Column="1" HorizontalAlignment="Stretch" Margin="3" Grid.Row="1" VerticalAlignment="Center"/>
-                                <!--<FontIcon Grid.Column="0" Grid.Row="2" Margin="0 0 0 0" HorizontalAlignment="Left" FontFamily="Segoe MDL2 Assets" Glyph="&#xF5A5;"/>
-                                <TextBlock Text="Check Number:" Grid.Column="0" Margin="27 0 0 0" HorizontalAlignment="Left" Grid.Row="2" VerticalAlignment="Center"/>
-                                <TextBox x:Name="EditIncomeCheckNumberTextBox" Grid.Column="1" HorizontalAlignment="Stretch" Height="23" Margin="3" Grid.Row="2" Text="{Binding CheckNumber, Mode=TwoWay}" VerticalAlignment="Center" extensions:TextBoxRegex.ValidationMode="Forced" extensions:TextBoxRegex.ValidationType="Decimal"/>
-                             -->
                                 <FontIcon Grid.Column="0" Grid.Row="2" Margin="0 0 0 0" HorizontalAlignment="Left" FontFamily="Segoe MDL2 Assets" Glyph="&#xEC59;"/>
                                 <TextBlock Text="Amount" Grid.Column="0" HorizontalAlignment="Left" Margin="27 0 0 0" Grid.Row="2" VerticalAlignment="Center"/>
                                 <TextBox x:Name="EditIncomeAmountPaidTextBox" Grid.Column="2" HorizontalAlignment="Stretch" Height="23" Margin="3" Grid.Row="2" Text="{Binding AmountPaid, Mode=TwoWay}" VerticalAlignment="Center" extensions:TextBoxRegex.ValidationMode="Forced" extensions:TextBoxRegex.ValidationType="Decimal"/>
@@ -743,6 +808,12 @@
                                         
                                         Height="80">
                                 </TextBox>
+                                <Grid x:Name="EditIncomePercentGrid" Visibility="Collapsed" Grid.Column="0" Grid.Row="5" Grid.ColumnSpan="2">
+                                    <FontIcon Grid.Column="0" Grid.Row="3" Margin="0 0 0 0" HorizontalAlignment="Left" FontFamily="Segoe MDL2 Assets" Glyph="&#xE94C;"/>
+                                    <TextBlock Text="Percent" HorizontalAlignment="Left" Margin="27 0 0 0" Grid.Row="3" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="EditIncomePercentTextBox" Width="180" HorizontalAlignment="Right" Height="23" Margin="3" Grid.Row="3" Text="{Binding AmountPaid, Mode=TwoWay}" VerticalAlignment="Center" extensions:TextBoxRegex.ValidationMode="Forced" extensions:TextBoxRegex.ValidationType="Decimal"/>
+                                </Grid>
+
                             </Grid>
 
                         </Grid>

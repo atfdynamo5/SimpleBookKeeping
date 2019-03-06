@@ -35,9 +35,9 @@ namespace SimpleBookKeeping.Model
 
                 modelBuilder.Entity<IncomeEntry>()
                     .HasKey(i => i.IncomeId);
-                modelBuilder.Entity<IncomeEntry>()
-                    .Property(i => i.CheckNumber)
-                    .HasMaxLength(20);
+                //modelBuilder.Entity<IncomeEntry>()
+                //    .Property(i => i.CheckNumber)
+                //    .HasMaxLength(20);
                 modelBuilder.Entity<IncomeEntry>()
                     .Property(i => i.EntryNotes)
                     .HasMaxLength(5000);
@@ -50,14 +50,17 @@ namespace SimpleBookKeeping.Model
                 modelBuilder.Entity<IncomeEntry>()
                     .Property(i => i.Month)
                     .HasMaxLength(2);
-                modelBuilder.Entity<IncomeEntry>()
+            modelBuilder.Entity<IncomeEntry>()
+                    .Property(i => i.Percentage)
+                    .HasMaxLength(10);
+            modelBuilder.Entity<IncomeEntry>()
                        .Property(i => i.IncomeTotal)
                        .HasMaxLength(500);
             }
 
             protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             {
-                optionsBuilder.UseSqlServer(@"Server=.\SQLEXPRESS;Database=BookKeeping;Trusted_Connection=True;");
+                optionsBuilder.UseSqlServer(@"Server=.\SQLEXPRESS;Database=BookKeeping3;Trusted_Connection=True;");
             }
 
 
